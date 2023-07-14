@@ -19,6 +19,8 @@ public class PlayerAgent : Agent
 
     bool mScreenPressed = false;
 
+    public float counter;
+
     float mFlap = 0f;
 
     // Start is called before the first frame update
@@ -29,22 +31,7 @@ public class PlayerAgent : Agent
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Debug.Log("Space pressed");
-            mFlap = 1f;
-        }
-        else
-        {
-            mFlap = 0f;
-        }
-
-
-        if (transform.position.y > 6f || transform.position.y < -6f)
-        {
-            mGameOver = true;
-            Debug.Log("outside the bounds");
-        }
+        counter += Time.deltaTime;
     }
 
     public override void OnEpisodeBegin()
@@ -53,6 +40,7 @@ public class PlayerAgent : Agent
         this.transform.localPosition = new Vector3(0f, 0f, 0f);
         mObstacleSet.InitiatePosition();
         mGameOver = false;
+        counter = 0;
         mScreenPressed = false;
     }
 
@@ -61,7 +49,7 @@ public class PlayerAgent : Agent
         // Next Pipe position
         Transform nextPipe = mObstacleSet.GetNextObstacle();
 
-        // Agent positions normalized to [0, 1]
+        // Agent positions
         float playerHeightFromSeabed = transform.localPosition.y - seabed.transform.position.y;
         sensor.AddObservation(playerHeightFromSeabed);
 
@@ -80,7 +68,7 @@ public class PlayerAgent : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        actionsOut.DiscreteActions.Array[0] = (int) mFlap;
+        actionsOut.DiscreteActions.Array[0] = Input.GetKey(KeyCode.Space) ? 1 : 0;
     }
 
     private void Push()
@@ -90,35 +78,23 @@ public class PlayerAgent : Agent
 
     public override void OnActionReceived(ActionBuffers vectorAction)
     {
-        //Debug.Log("From the network: " + vectorAction[0]);
-        if (mGameOver)
+        AddReward(Time.fixedDeltaTime);
+        int tap = vectorAction.DiscreteActions[0];
+        if (tap == 0)
         {
-            SetReward(-1f);
-            EndEpisode();
+            mScreenPressed = false;
         }
-        else
+        if (tap == 1 && !mScreenPressed)
         {
-            
-            SetReward(0.01f);
-            //Debug.Log("discrete actions: " + vectorAction.DiscreteActions.Length);
-
-            int tap = vectorAction.DiscreteActions[0];
-            if (tap == 0f || mScreenPressed)
-            {
-                mScreenPressed = false;
-            }else if(tap == 1f && !mScreenPressed)
-            {
-                mScreenPressed = true;
-                Push();
-            }
-
+            Push();
+            mScreenPressed = true;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D collision2d)
     {
-        //Debug.Log("collided with : " + collision2d.gameObject.name);
-        mGameOver = true;
+        SetReward(-1f);
+        EndEpisode();
     }
 
     public float Normalize(float max, float min, float value)
