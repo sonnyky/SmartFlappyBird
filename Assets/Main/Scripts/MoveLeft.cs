@@ -14,16 +14,16 @@ public class MoveLeft : MonoBehaviour
     void Update()
     {
         transform.Translate(Vector3.left * Time.deltaTime * m_Speed);
-        if (transform.localPosition.x < -15f) // .9f was precalculated. refactor this to increase flexibility!
+        if (transform.localPosition.x < -5f) // .9f was precalculated. refactor this to increase flexibility!
         {
             if (_randomizeHeight)
             {
                 float randomYPosition = UnityEngine.Random.Range(-3, 3);
-                transform.localPosition = new Vector3(10f, randomYPosition, 0);
+                transform.localPosition = new Vector3(20f, randomYPosition, 0);
             }
             else
             {
-                transform.localPosition = new Vector3(10f, transform.position.y, 0);
+                transform.localPosition = new Vector3(20f, transform.position.y, 0);
             }
         }
     }
